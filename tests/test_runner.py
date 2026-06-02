@@ -5,8 +5,8 @@ from fillblank_eval.provider_client import ProviderError
 from fillblank_eval.runner import RunnerConfig, run_benchmark
 
 
-def _case(case_id: str, language: str, construct: str, control_type: str = "negative_control") -> dict:
-    return {
+def _case(case_id: str, language: str, construct: str, control_type: str = "negative_control", translation_group: str | None = None) -> dict:
+    row = {
         "id": case_id,
         "tier": "public_dev",
         "language": language,
@@ -38,6 +38,9 @@ def _case(case_id: str, language: str, construct: str, control_type: str = "nega
         },
         "notes": "Public runner test fixture only; not a private holdout.",
     }
+    if translation_group is not None:
+        row["translation_group"] = translation_group
+    return row
 
 
 def test_run_benchmark_mock_writes_jsonl_json_markdown_and_html(tmp_path):
@@ -74,6 +77,7 @@ def test_run_benchmark_mock_writes_jsonl_json_markdown_and_html(tmp_path):
     assert summary["breakdowns"]["by_language"]["de"]["case_count"] == 1
     assert summary["breakdowns"]["by_construct"]["uncertainty_preservation"]["case_count"] == 1
     assert summary["breakdowns"]["by_control_type"]["positive_control"]["case_count"] == 1
+    assert summary["parallel_groups"] == []
     assert summary["public_claim_ready"] is False
     assert "behavior/alignment-relevant profile" in summary["interpretation"]
 
@@ -84,6 +88,29 @@ def test_run_benchmark_mock_writes_jsonl_json_markdown_and_html(tmp_path):
     html = (out_dir / "report.html").read_text(encoding="utf-8")
     assert "<html" in html
     assert "Language breakdown" in html
+
+
+def test_run_benchmark_reports_parallel_translation_groups(tmp_path):
+    dataset = tmp_path / "public_dev.jsonl"
+    rows = [
+        _case("fitb-en-runner-parallel-001", "en", "uncertainty_preservation", translation_group="runner-parallel-001"),
+        _case("fitb-es-runner-parallel-001", "es", "uncertainty_preservation", translation_group="runner-parallel-001"),
+        _case("fitb-fr-runner-parallel-001", "fr", "uncertainty_preservation", translation_group="runner-parallel-001"),
+    ]
+    dataset.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+
+    out_dir = tmp_path / "run"
+    result = run_benchmark(RunnerConfig(dataset_paths=[dataset], out_dir=out_dir, provider="mock", model="mock-model"))
+
+    assert result.ok
+    summary = json.loads((out_dir / "summary.json").read_text(encoding="utf-8"))
+    groups = summary["parallel_groups"]
+    assert len(groups) == 1
+    assert groups[0]["translation_group"] == "runner-parallel-001"
+    assert groups[0]["case_count"] == 3
+    assert groups[0]["languages"] == ["en", "es", "fr"]
+    assert groups[0]["score_range"] == 0
+    assert "Parallel translation groups" in (out_dir / "report.md").read_text(encoding="utf-8")
 
 
 def test_run_benchmark_keeps_stable_schema_for_partial_provider_failure(tmp_path, monkeypatch):

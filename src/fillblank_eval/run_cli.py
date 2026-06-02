@@ -8,7 +8,11 @@ from .provider_client import ProviderError
 from .runner import RunnerConfig, run_benchmark
 
 
-DEFAULT_PUBLIC_DATASETS = [Path("examples/public_sample.jsonl"), Path("examples/public_dev.jsonl")]
+DEFAULT_PUBLIC_DATASETS = [
+    Path("examples/public_sample.jsonl"),
+    Path("examples/public_dev.jsonl"),
+    Path("examples/public_top10_sample.jsonl"),
+]
 
 
 def _env(name: str, default: str | None = None) -> str | None:

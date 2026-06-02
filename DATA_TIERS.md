@@ -8,6 +8,11 @@ The project uses explicit data tiers to keep public collaboration useful without
 
 Small, readable examples for documentation and smoke tests.
 
+Dataset files currently using this tier:
+
+- `examples/public_sample.jsonl`: core English/German/Greek examples.
+- `examples/public_top10_sample.jsonl`: one translation-assisted smoke row per top-10 total-speaker language; all rows share `translation_group: top10-app-001` so maintainers can compare the same underlying question across languages. Use for multilingual plumbing/diagnostic coverage only, not native-reviewed language claims.
+
 Use for:
 
 - README examples;

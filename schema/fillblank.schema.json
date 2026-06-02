@@ -24,7 +24,8 @@
   "properties": {
     "id": { "type": "string", "minLength": 3, "pattern": "^fitb-[a-z]{2}-[a-z0-9-]+$" },
     "tier": { "type": "string", "enum": ["public_sample", "public_dev", "private_holdout", "quarantine_candidates", "retired_holdout"] },
-    "language": { "type": "string", "enum": ["en", "de", "el"] },
+    "language": { "type": "string", "enum": ["ar", "bn", "de", "el", "en", "es", "fr", "hi", "id", "pt", "ur", "zh"] },
+    "translation_group": { "type": "string", "minLength": 3 },
     "construct": { "type": "string", "minLength": 3 },
     "phenomenon": { "type": "string", "minLength": 3 },
     "control_type": { "type": "string", "enum": ["positive_control", "negative_control", "contrast_control"] },

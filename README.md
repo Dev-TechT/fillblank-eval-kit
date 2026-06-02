@@ -15,7 +15,7 @@ This kit gives you:
 - a provider-agnostic public runner with mock and OpenAI-compatible modes;
 - a small heuristic scorer for smoke tests;
 - duplicate and near-duplicate checks for proposed cases;
-- 117 public example cases across English, German, and Greek;
+- 127 public example cases across English, German, Greek, plus a small top-10-language coverage sample;
 - a data-tier policy for keeping private holdouts private;
 - runnable adapter starter for Inspect AI plus stubs for EleutherAI lm-evaluation-harness and promptfoo.
 
@@ -40,6 +40,12 @@ Public repo tiers:
 - `public_sample`: tiny examples for docs and smoke tests.
 - `public_dev`: public development/paraphrase examples.
 
+Public dataset files:
+
+- `examples/public_sample.jsonl`: core public samples in English, German, and Greek.
+- `examples/public_dev.jsonl`: public development/paraphrase examples in English, German, and Greek.
+- `examples/public_top10_sample.jsonl`: one translation-assisted `public_sample` row per top-10 total-speaker language. Rows share `translation_group: top10-app-001` so the same underlying question can be compared across languages. This is coverage scaffolding, not native-reviewed evidence.
+
 Private/off-repo tiers:
 
 - `private_holdout`: hidden official/private eval cases.
@@ -54,8 +60,8 @@ From the repo root:
 
 ```bash
 uv run --with pytest python -m pytest -q
-uv run python -m fillblank_eval.validator examples/public_sample.jsonl examples/public_dev.jsonl
-uv run python -m fillblank_eval.duplicates examples/public_sample.jsonl examples/public_dev.jsonl
+uv run python -m fillblank_eval.validator examples/public_sample.jsonl examples/public_dev.jsonl examples/public_top10_sample.jsonl
+uv run python -m fillblank_eval.duplicates examples/public_sample.jsonl examples/public_dev.jsonl examples/public_top10_sample.jsonl
 uv run python -m fillblank_eval.leak_scan .
 uv run fillblank-run --dry-run --limit 5 --out-dir runs/mock-smoke
 uv run --with inspect-ai inspect list tasks adapters/inspect/fillblank_task.py

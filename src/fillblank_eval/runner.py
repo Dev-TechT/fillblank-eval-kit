@@ -73,6 +73,32 @@ def _breakdown(case_results: list[dict[str, Any]], key: str) -> dict[str, dict[s
     return output
 
 
+def _parallel_groups(case_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in case_results:
+        group = row.get("translation_group")
+        if isinstance(group, str) and group.strip():
+            grouped.setdefault(group, []).append(row)
+    summaries: list[dict[str, Any]] = []
+    for group, rows in sorted(grouped.items()):
+        if len(rows) < 2:
+            continue
+        scores = [int(row.get("score", 0)) for row in rows]
+        summaries.append({
+            "translation_group": group,
+            "case_count": len(rows),
+            "languages": sorted(str(row.get("language") or "unknown") for row in rows),
+            "mean_score": round(sum(scores) / len(scores), 3) if scores else 0.0,
+            "score_range": max(scores) - min(scores) if scores else 0,
+            "unsupported_assumption": sum(1 for row in rows if row.get("labels", {}).get("unsupported_assumption")),
+            "harmful_generalization": sum(1 for row in rows if row.get("labels", {}).get("harmful_generalization")),
+            "essentialism": sum(1 for row in rows if row.get("labels", {}).get("essentialism")),
+            "uncertainty_preserved": sum(1 for row in rows if row.get("labels", {}).get("uncertainty_preserved")),
+            "over_refusal": sum(1 for row in rows if row.get("labels", {}).get("over_refusal")),
+        })
+    return summaries
+
+
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
     path.write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + ("\n" if rows else ""), encoding="utf-8")
 
@@ -106,12 +132,13 @@ def run_benchmark(config: RunnerConfig) -> RunnerResult:
         prompt = render_prompt(case)
         try:
             completion = client.complete(prompt, case_id=case_id)
-            score = score_output(completion.text)
+            score = score_output(completion.text, control_type=case.get("control_type"))
             score_results.append(score)
             scored = {
                 "case_id": case_id,
                 "tier": case.get("tier"),
                 "language": case.get("language"),
+                "translation_group": case.get("translation_group"),
                 "construct": case.get("construct"),
                 "phenomenon": case.get("phenomenon"),
                 "control_type": case.get("control_type"),
@@ -139,6 +166,7 @@ def run_benchmark(config: RunnerConfig) -> RunnerResult:
                 "case_id": case_id,
                 "tier": case.get("tier"),
                 "language": case.get("language"),
+                "translation_group": case.get("translation_group"),
                 "construct": case.get("construct"),
                 "phenomenon": case.get("phenomenon"),
                 "control_type": case.get("control_type"),
@@ -170,6 +198,7 @@ def run_benchmark(config: RunnerConfig) -> RunnerResult:
             "by_construct": _breakdown(case_results, "construct"),
             "by_control_type": _breakdown(case_results, "control_type"),
         },
+        "parallel_groups": _parallel_groups(case_results),
         "case_results": case_results,
         "public_claim_ready": False,
         "caveat": PUBLIC_CAVEAT,

@@ -21,6 +21,20 @@ Expected artifacts:
 
 The mock provider does not call a network service and does not need credentials. Its scores are only a pipeline smoke test, not model evidence.
 
+## Default public split
+
+Without `--dataset`, the runner evaluates these public files:
+
+- `examples/public_sample.jsonl`
+- `examples/public_dev.jsonl`
+- `examples/public_top10_sample.jsonl`
+
+The top-10-language file is a small translation-assisted smoke sample. Its rows share a `translation_group`, so reports include a parallel-language summary for checking whether the same model behaves differently on the same underlying question across languages. Treat this as runner/scorer diagnostics, not native-reviewed language evidence.
+
+## Private/off-repo validation
+
+The validator schema also recognizes private/off-repo tier names (`private_holdout`, `quarantine_candidates`, `retired_holdout`) so maintainers can validate local private files with `--allow-private`. Those rows must not be added to public dataset files or public CI artifacts.
+
 ## OpenAI-compatible provider
 
 Set environment variables, then run the public split:

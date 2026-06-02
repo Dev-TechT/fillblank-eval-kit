@@ -9,7 +9,7 @@ from typing import Any, Iterable
 PUBLIC_TIERS = {"public_sample", "public_dev"}
 PRIVATE_TIERS = {"private_holdout", "quarantine_candidates", "retired_holdout"}
 ALL_TIERS = PUBLIC_TIERS | PRIVATE_TIERS
-LANGUAGES = {"en", "de", "el"}
+LANGUAGES = {"ar", "bn", "de", "el", "en", "es", "fr", "hi", "id", "pt", "ur", "zh"}
 DIFFICULTIES = {"easy", "medium", "hard"}
 CONTROL_TYPES = {"positive_control", "negative_control", "contrast_control"}
 
@@ -104,6 +104,9 @@ def validate_case(case: dict[str, Any], *, public_mode: bool = True, index: int 
     language = case.get("language")
     if language not in LANGUAGES:
         errors.append(f"{prefix} language must be one of {sorted(LANGUAGES)}")
+
+    if "translation_group" in case and not _is_non_empty_str(case.get("translation_group")):
+        errors.append(f"{prefix} translation_group must be a non-empty string when present")
 
     for field in ["construct", "phenomenon", "answer_mode", "expected_behavior", "notes"]:
         if not _is_non_empty_str(case.get(field)):

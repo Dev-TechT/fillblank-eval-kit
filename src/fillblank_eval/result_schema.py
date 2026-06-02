@@ -6,6 +6,7 @@ REQUIRED_RESULT_ROW_FIELDS = {
     "case_id",
     "tier",
     "language",
+    "translation_group",
     "construct",
     "phenomenon",
     "control_type",
@@ -24,6 +25,7 @@ REQUIRED_SUMMARY_FIELDS = {
     "provider",
     "model",
     "dataset_paths",
+    "parallel_groups",
     "summary",
     "breakdowns",
     "case_results",
@@ -40,6 +42,8 @@ def validate_result_row(row: dict[str, Any]) -> list[str]:
             errors.append(f"missing required field: {field}")
     if "case_id" in row and not isinstance(row["case_id"], str):
         errors.append("case_id must be a string")
+    if "translation_group" in row and row["translation_group"] is not None and not isinstance(row["translation_group"], str):
+        errors.append("translation_group must be a string or null")
     if "score" in row and row["score"] is not None and row["score"] not in {0, 1, 2, 3}:
         errors.append("score must be one of 0, 1, 2, 3 or null for failed rows")
     if "labels" in row and not isinstance(row["labels"], dict):
@@ -70,4 +74,6 @@ def validate_run_summary(summary: dict[str, Any]) -> list[str]:
                 errors.append(f"breakdowns missing required field: {field}")
     elif "breakdowns" in summary:
         errors.append("breakdowns must be an object")
+    if "parallel_groups" in summary and not isinstance(summary["parallel_groups"], list):
+        errors.append("parallel_groups must be a list")
     return errors

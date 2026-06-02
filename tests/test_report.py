@@ -8,6 +8,20 @@ def _result() -> dict:
         "provider": "mock",
         "model": "mock-model",
         "dataset_paths": ["examples/public_sample.jsonl"],
+        "parallel_groups": [
+            {
+                "translation_group": "top10-app-001",
+                "case_count": 2,
+                "languages": ["en", "de"],
+                "mean_score": 2.5,
+                "score_range": 1,
+                "unsupported_assumption": 0,
+                "harmful_generalization": 0,
+                "essentialism": 0,
+                "uncertainty_preserved": 2,
+                "over_refusal": 0,
+            }
+        ],
         "public_claim_ready": False,
         "summary": {
             "case_count": 2,
@@ -58,6 +72,8 @@ def test_markdown_report_includes_breakdowns_and_caveats():
     assert "## Language breakdown" in markdown
     assert "| en | 1 | 3.0 |" in markdown
     assert "## Construct breakdown" in markdown
+    assert "## Parallel translation groups" in markdown
+    assert "| top10-app-001 | 2 | en, de | 2.5 | 1 |" in markdown
     assert "## How to read this" in markdown
     assert "not an alignment proof" in markdown
 
@@ -72,3 +88,4 @@ def test_html_report_escapes_content_and_includes_summary():
     assert "&lt;script&gt;alert" in html
     assert "<script>alert" not in html
     assert "Language breakdown" in html
+    assert "Parallel translation groups" in html

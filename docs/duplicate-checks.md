@@ -5,7 +5,7 @@ Use this gate when adding or reviewing public sample/dev rows or private quarant
 ## Command
 
 ```bash
-uv run python -m fillblank_eval.duplicates examples/public_sample.jsonl examples/public_dev.jsonl
+uv run python -m fillblank_eval.duplicates examples/public_sample.jsonl examples/public_dev.jsonl examples/public_top10_sample.jsonl
 ```
 
 For private/off-repo candidate files:

@@ -38,6 +38,28 @@ def _markdown_table(title: str, rows: dict[str, dict[str, Any]]) -> list[str]:
     return lines
 
 
+def _parallel_markdown_table(groups: list[dict[str, Any]]) -> list[str]:
+    lines = ["## Parallel translation groups", "", "| group | cases | languages | mean score | score range | unsupported | harmful | uncertainty | over-refusal |", "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |"]
+    if not groups:
+        lines.append("| none | 0 | - | 0 | 0 | 0 | 0 | 0 | 0 |")
+        return lines
+    for group in groups:
+        lines.append(
+            "| {group} | {cases} | {languages} | {mean} | {score_range} | {unsupported} | {harmful} | {uncertainty} | {over_refusal} |".format(
+                group=group.get("translation_group", "unknown"),
+                cases=group.get("case_count", 0),
+                languages=", ".join(group.get("languages") or []),
+                mean=group.get("mean_score", 0),
+                score_range=group.get("score_range", 0),
+                unsupported=group.get("unsupported_assumption", 0),
+                harmful=group.get("harmful_generalization", 0),
+                uncertainty=group.get("uncertainty_preserved", 0),
+                over_refusal=group.get("over_refusal", 0),
+            )
+        )
+    return lines
+
+
 def build_markdown_report(result: dict) -> str:
     interpretation = result.get("interpretation") or build_interpretation(result)
     lines = [
@@ -59,6 +81,7 @@ def build_markdown_report(result: dict) -> str:
     lines.extend([""] + _markdown_table("Language breakdown", breakdowns.get("by_language") or {}))
     lines.extend([""] + _markdown_table("Construct breakdown", breakdowns.get("by_construct") or {}))
     lines.extend([""] + _markdown_table("Control-type breakdown", breakdowns.get("by_control_type") or {}))
+    lines.extend([""] + _parallel_markdown_table(result.get("parallel_groups") or []))
 
     if result.get("errors"):
         lines.extend(["", "## Errors"])
@@ -94,6 +117,32 @@ def _html_table(title: str, rows: dict[str, dict[str, Any]]) -> str:
         f"<h2>{html.escape(title)}</h2>"
         "<table><thead><tr><th>group</th><th>cases</th><th>mean score</th><th>unsupported</th>"
         "<th>harmful</th><th>uncertainty</th><th>over-refusal</th></tr></thead>"
+        f"<tbody>{body}</tbody></table>"
+    )
+
+
+def _parallel_html_table(groups: list[dict[str, Any]]) -> str:
+    if groups:
+        body = "".join(
+            "<tr>"
+            f"<td>{html.escape(str(group.get('translation_group', 'unknown')))}</td>"
+            f"<td>{group.get('case_count', 0)}</td>"
+            f"<td>{html.escape(', '.join(group.get('languages') or []))}</td>"
+            f"<td>{group.get('mean_score', 0)}</td>"
+            f"<td>{group.get('score_range', 0)}</td>"
+            f"<td>{group.get('unsupported_assumption', 0)}</td>"
+            f"<td>{group.get('harmful_generalization', 0)}</td>"
+            f"<td>{group.get('uncertainty_preserved', 0)}</td>"
+            f"<td>{group.get('over_refusal', 0)}</td>"
+            "</tr>"
+            for group in groups
+        )
+    else:
+        body = "<tr><td>none</td><td>0</td><td>-</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>"
+    return (
+        "<h2>Parallel translation groups</h2>"
+        "<table><thead><tr><th>group</th><th>cases</th><th>languages</th><th>mean score</th><th>score range</th>"
+        "<th>unsupported</th><th>harmful</th><th>uncertainty</th><th>over-refusal</th></tr></thead>"
         f"<tbody>{body}</tbody></table>"
     )
 
@@ -142,6 +191,7 @@ def build_html_report(result: dict) -> str:
   {language_table}
   {construct_table}
   {control_table}
+  {parallel_table}
   <h2>Cases</h2>
   {case_items}
   <details><summary>Markdown source</summary><pre>{markdown}</pre></details>
@@ -157,6 +207,7 @@ def build_html_report(result: dict) -> str:
         language_table=_html_table("Language breakdown", breakdowns.get("by_language") or {}),
         construct_table=_html_table("Construct breakdown", breakdowns.get("by_construct") or {}),
         control_table=_html_table("Control-type breakdown", breakdowns.get("by_control_type") or {}),
+        parallel_table=_parallel_html_table(result.get("parallel_groups") or []),
         case_items=case_items,
         markdown=html.escape(markdown_fallback),
     )

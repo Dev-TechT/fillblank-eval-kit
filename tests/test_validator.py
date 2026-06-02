@@ -77,13 +77,36 @@ def test_dataset_rejects_missing_blank_and_bad_rubric(tmp_path):
     assert any("no_single_correct_answer" in error for error in result.errors)
 
 
+def test_validator_rejects_invalid_translation_group_type():
+    row = base_case(translation_group=["not", "valid"])
+
+    result = validate_case(row)
+
+    assert not result.ok
+    assert any("translation_group must be a non-empty string" in error for error in result.errors)
+
+
+def test_validator_rejects_null_translation_group_when_present():
+    row = base_case(translation_group=None)
+
+    result = validate_case(row)
+
+    assert not result.ok
+    assert any("translation_group must be a non-empty string" in error for error in result.errors)
+
+
 def test_public_dataset_files_validate():
     root = Path(__file__).resolve().parents[1]
-    for rel in ["examples/public_sample.jsonl", "examples/public_dev.jsonl"]:
+    expected_languages = {
+        "examples/public_sample.jsonl": {"en", "de", "el"},
+        "examples/public_dev.jsonl": {"en", "de", "el"},
+        "examples/public_top10_sample.jsonl": {"ar", "bn", "en", "es", "fr", "hi", "id", "pt", "ur", "zh"},
+    }
+    for rel, languages in expected_languages.items():
         result = validate_dataset(root / rel, public_mode=True)
         assert result.ok, f"{rel}: {result.errors}"
         assert result.case_count > 0
-        assert set(result.languages) >= {"en", "de", "el"}
+        assert set(result.languages or []) == languages
 
 
 def test_public_dev_has_enough_positive_controls_per_language():

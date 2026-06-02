@@ -87,6 +87,7 @@ Allowed wording:
 - private QA signal;
 - regression canary;
 - sample/dev benchmark kit;
+- behavior/alignment-relevant profile on this dataset/version;
 - observed behavior on this dataset/version.
 
 Disallowed wording:
