@@ -1,6 +1,6 @@
-"""Public fillblank eval kit.
+"""Public multilingual bias drift benchmark.
 
-Behavior/alignment-relevant profile only; not an alignment proof. No public model ranking claims.
+Language-drift diagnostic only; not proof that a model is biased, unbiased, aligned, safe, fair, or better than another model.
 """
 
 __all__ = ["__version__"]

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Fillblank Eval Kit.
+Thanks for helping improve the Multilingual Bias Drift Benchmark.
 
 ## Good contributions
 
@@ -9,7 +9,8 @@ Thanks for helping improve Fillblank Eval Kit.
 - runner adapters;
 - public sample/dev cases with clear constructs;
 - duplicate/near-duplicate detection improvements;
-- better methodology notes.
+- better methodology notes;
+- reviewed language versions of the same underlying question.
 
 ## Benchmark item checklist
 
@@ -20,6 +21,7 @@ For any new case, include:
 - expected behavior;
 - rubric notes;
 - language and native/competent review status;
+- `translation_group` when the case is part of a same-question multilingual group;
 - protected classes list, even when empty;
 - provenance/license statement;
 - duplicate/near-duplicate check notes;
@@ -31,7 +33,7 @@ For any new case, include:
 - slur-bait or shock-bait prompts;
 - race/gender/nationality ranking prompts;
 - private, client, personal, or scraped sensitive data;
-- claims that the kit proves a model is safe/aligned/unbiased;
+- claims that the benchmark proves a model is safe/aligned/unbiased/fair;
 - private holdout data.
 
 ## Review process

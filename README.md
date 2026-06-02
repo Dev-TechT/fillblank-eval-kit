@@ -1,37 +1,58 @@
-# Fillblank Eval Kit
+# Multilingual Bias Drift Benchmark
 
-A small open-source kit for building and validating fill-in-the-blank QA canaries around unsupported assumptions, harmful generalization, essentialist wording, false-premise fabrication, and uncertainty preservation.
+A small open-source benchmark for checking whether the same model changes its answer stance when the same underlying question is asked in different language versions.
 
-Important caveat: this is a QA/regression kit, not an alignment proof. Do not use the public sample/dev data to claim that a model is unbiased, aligned, safe, or better than another model.
+Core idea:
+
+> Same question. Same model. Different language. Compare whether the answer becomes anti/stereotype, pro/counter-stereotype, neutral/uncertain, or refusal/void depending on the language.
+
+Example signal:
+
+- English answer: anti-women / stereotype-like.
+- Spanish answer: pro-women / counter-stereotype-like.
+- German answer: neutral / says there is not enough information.
+
+That language-driven answer drift is the benchmark target.
+
+Important caveat: this is a QA/regression benchmark, not proof that a model is biased, unbiased, safe, or better than another model. Public sample/dev data is for development and demonstration. Strong public claims need a reviewed methodology, private holdout design, native/competent language review, and explicit publication approval.
 
 ## Why this exists
 
-Many useful LLM failures are not simple right/wrong failures. In ambiguous prompts, a good answer often preserves uncertainty instead of inventing demographics, intent, culture, or facts.
+Many LLM failures are not simple right/wrong failures. A model can answer an ambiguous prompt neutrally in one language, repeat a stereotype in another language, and refuse in a third. That is exactly the kind of drift this benchmark is meant to expose.
 
-This kit gives you:
+This project gives you:
 
-- a JSONL case schema;
+- a JSONL case schema for same-question multilingual prompt groups;
 - a validator for public sample/dev data;
-- a provider-agnostic public runner with mock and OpenAI-compatible modes;
+- a provider-agnostic runner with mock and OpenAI-compatible modes;
 - a small heuristic scorer for smoke tests;
 - duplicate and near-duplicate checks for proposed cases;
-- 127 public example cases across English, German, Greek, plus a small top-10-language coverage sample;
+- 127 public example cases across English, German, Greek, plus a small 10-language pilot set;
 - a data-tier policy for keeping private holdouts private;
 - runnable adapter starter for Inspect AI plus stubs for EleutherAI lm-evaluation-harness and promptfoo.
 
 ## What this is good for
 
-- Private QA of agent/model output before public or client-facing use.
-- Regression canaries for prompt/model changes.
-- Teaching benchmark-design best practices: data tiers, leakage gates, caveats, controls.
-- Community discussion around open-ended fill-in-the-blank QA behavior.
+- Finding language-driven stance drift in model answers.
+- Private QA before public or client-facing multilingual model use.
+- Regression checks after model, prompt, provider, or system-prompt changes.
+- Building reviewed multilingual bias/drift test sets with public/private data tiers.
+- Teaching benchmark-design basics: data tiers, leakage gates, caveats, controls, and review process.
 
 ## What this is not
 
-- Not a comprehensive bias benchmark.
+- Not a comprehensive scientific bias benchmark by itself.
 - Not an alignment benchmark.
-- Not a public leaderboard-ready dataset.
-- Not proof that a model is unbiased, safe, compliant, or production-ready.
+- Not a model leaderboard dataset.
+- Not proof that a model is biased, unbiased, safe, compliant, fair, or production-ready.
+
+## Key terms
+
+- `translation_group`: one underlying question represented in multiple languages. Compare within this group.
+- `language`: the language version used for a prompt, e.g. `en`, `de`, `es`.
+- `answer stance`: the reviewed class of the model answer, such as anti/stereotype, pro/counter-stereotype, neutral/uncertain, or refusal/void.
+- `drift`: a change in answer stance across language versions of the same underlying question for the same model/run settings.
+- `void`: refusal, non-answer, malformed answer, provider error, or otherwise unusable output.
 
 ## Data tiers
 
@@ -44,7 +65,7 @@ Public dataset files:
 
 - `examples/public_sample.jsonl`: core public samples in English, German, and Greek.
 - `examples/public_dev.jsonl`: public development/paraphrase examples in English, German, and Greek.
-- `examples/public_top10_sample.jsonl`: one translation-assisted `public_sample` row per top-10 total-speaker language. Rows share `translation_group: top10-app-001` so the same underlying question can be compared across languages. This is coverage scaffolding, not native-reviewed evidence.
+- `examples/public_top10_sample.jsonl`: one translation-assisted `public_sample` row per top-10 total-speaker language. Rows share `translation_group: top10-app-001` so the same underlying question can be compared across language versions. This is a 10-language pilot set, not native-reviewed evidence.
 
 Private/off-repo tiers:
 
@@ -52,7 +73,7 @@ Private/off-repo tiers:
 - `quarantine_candidates`: submitted or drafted cases waiting for review/transformation; private/off-repo by default.
 - `retired_holdout`: old holdout rows no longer used for official scoring; private/off-repo by default.
 
-Private tiers must never be committed, published to Hugging Face dataset viewer, stored in public CI artifacts, or exposed in per-sample leaderboard logs.
+Private tiers must never be committed, published to Hugging Face dataset viewer, stored in public CI artifacts, or exposed in per-sample public logs.
 
 ## Quick start
 
@@ -63,7 +84,7 @@ uv run --with pytest python -m pytest -q
 uv run python -m fillblank_eval.validator examples/public_sample.jsonl examples/public_dev.jsonl examples/public_top10_sample.jsonl
 uv run python -m fillblank_eval.duplicates examples/public_sample.jsonl examples/public_dev.jsonl examples/public_top10_sample.jsonl
 uv run python -m fillblank_eval.leak_scan .
-uv run fillblank-run --dry-run --limit 5 --out-dir runs/mock-smoke
+uv run fillblank-run --dry-run --limit 5 --progress --progress-jsonl runs/mock-smoke/run_events.jsonl --out-dir runs/mock-smoke
 uv run --with inspect-ai inspect list tasks adapters/inspect/fillblank_task.py
 ```
 
@@ -73,7 +94,7 @@ Expected result:
 - public datasets validate;
 - duplicate check has zero blocking errors; warnings are review signals;
 - leak scan reports no private benchmark data markers outside policy docs;
-- mock runner writes `results.jsonl`, `summary.json`, `report.md`, and `report.html`;
+- mock runner writes `results.jsonl`, `summary.json`, optional `run_events.jsonl`, `report.md`, and `report.html`;
 - Inspect AI task listing finds `fillblank_public_dev`.
 
 To run a real OpenAI-compatible provider, see [`docs/PROVIDERS.md`](docs/PROVIDERS.md). To interpret output artifacts, see [`docs/RESULTS.md`](docs/RESULTS.md).
@@ -85,6 +106,7 @@ To run a real OpenAI-compatible provider, see [`docs/PROVIDERS.md`](docs/PROVIDE
   "id": "fitb-en-sample-app-001",
   "tier": "public_sample",
   "language": "en",
+  "translation_group": "sample-app-001",
   "construct": "uncertainty_preservation",
   "phenomenon": "age_or_ability_assumption",
   "control_type": "negative_control",
@@ -117,9 +139,9 @@ To run a real OpenAI-compatible provider, see [`docs/PROVIDERS.md`](docs/PROVIDE
 
 ## Relationship to existing benchmarks
 
-This kit is inspired by and should be compared carefully against stronger academic benchmarks such as BBQ, Open-BBQ, StereoSet, HONEST, UnknownBench, SelfAware, TruthfulQA, XSTest, and DecodingTrust.
+This benchmark is inspired by and should be compared carefully against stronger academic benchmarks such as BBQ, Open-BBQ, StereoSet, HONEST, UnknownBench, SelfAware, TruthfulQA, XSTest, and DecodingTrust.
 
-The narrow niche here is practical/private canary testing for multilingual fill-in-the-blank QA behavior. If you need scientific bias measurement, use established benchmark papers and methodology; if you publish claims, include uncertainty, limitations, sample counts, and review process.
+The narrow niche here is practical/private detection of multilingual answer drift for equivalent prompts. If you need scientific bias measurement, use established benchmark papers and methodology; if you publish claims, include uncertainty, limitations, sample counts, native/competent review, and the exact model/run metadata.
 
 ## Recommended public/private pattern
 

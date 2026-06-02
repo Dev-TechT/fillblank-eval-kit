@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://dev-techt.github.io/fillblank-eval-kit/schema/fillblank.schema.json",
-  "title": "Fillblank Eval Kit Case",
+  "title": "Multilingual Bias Drift Benchmark Case",
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -33,6 +33,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout-seconds", type=int, default=int(_env("FILLBLANK_TIMEOUT_SECONDS", "60") or 60))
     parser.add_argument("--limit", type=int, default=None, help="Optional first-N case limit for smoke tests")
     parser.add_argument("--include-raw-response", action="store_true", help="Include raw provider JSON in results.jsonl; avoid when responses may contain sensitive data")
+    parser.add_argument("--progress", action="store_true", help="Print human-readable run progress to stderr")
+    parser.add_argument("--progress-jsonl", type=Path, default=None, help="Write machine-readable run progress/events JSONL to this path")
     parser.add_argument("--dry-run", action="store_true", help="Force credential-free mock provider")
     args = parser.parse_args(argv)
 
@@ -50,6 +52,8 @@ def main(argv: list[str] | None = None) -> int:
         timeout_seconds=args.timeout_seconds,
         limit=args.limit,
         include_raw_response=args.include_raw_response,
+        progress=args.progress,
+        progress_jsonl=args.progress_jsonl,
     )
     try:
         result = run_benchmark(config)

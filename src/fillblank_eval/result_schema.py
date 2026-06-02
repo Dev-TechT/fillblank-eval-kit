@@ -27,6 +27,7 @@ REQUIRED_SUMMARY_FIELDS = {
     "dataset_paths",
     "parallel_groups",
     "summary",
+    "progress_events",
     "breakdowns",
     "case_results",
     "public_claim_ready",

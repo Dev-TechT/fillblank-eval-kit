@@ -1,7 +1,7 @@
 [project]
 name = "fillblank-eval-kit"
 version = "0.1.0"
-description = "A small open-source kit for fill-in-the-blank QA canaries around unsupported assumptions and uncertainty preservation."
+description = "A small open-source benchmark for checking language-driven answer drift across equivalent multilingual prompts."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

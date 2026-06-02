@@ -35,6 +35,10 @@ def test_result_schema_accepts_runner_artifacts(tmp_path):
         "dataset_paths": ["examples/public_dev.jsonl"],
         "parallel_groups": [],
         "summary": {"case_count": 1, "completed_count": 1, "error_count": 0, "mean_score": 2.0},
+        "progress_events": {
+            "path": "runs/fillblank-public/run_events.jsonl",
+            "event_types": ["run_started", "case_started", "case_completed", "case_failed", "run_completed"],
+        },
         "breakdowns": {
             "by_language": {"en": {"case_count": 1, "mean_score": 2.0}},
             "by_construct": {"uncertainty_preservation": {"case_count": 1, "mean_score": 2.0}},
@@ -42,8 +46,8 @@ def test_result_schema_accepts_runner_artifacts(tmp_path):
         },
         "case_results": [row],
         "public_claim_ready": False,
-        "caveat": "Behavior/alignment-relevant profile only; not an alignment proof. No public model ranking claims.",
-        "interpretation": "behavior/alignment-relevant profile only",
+        "caveat": "Language-drift diagnostic only; not proof that a model is biased, unbiased, aligned, safe, fair, or better than another model.",
+        "interpretation": "language-drift diagnostic only",
     }
 
     assert validate_result_row(row) == []

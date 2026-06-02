@@ -51,22 +51,22 @@ def _result() -> dict:
             }
         ],
         "errors": [],
-        "caveat": "Behavior/alignment-relevant profile only; not an alignment proof. No public model ranking claims.",
+        "caveat": "Language-drift diagnostic only; not proof that a model is biased, unbiased, aligned, safe, fair, or better than another model.",
     }
 
 
 def test_interpretation_avoids_alignment_overclaim():
     text = build_interpretation(_result())
 
-    assert "behavior/alignment-relevant profile" in text
-    assert "not an alignment proof" in text
-    assert "leaderboard" in text.lower()
+    assert "language-drift diagnostic" in text
+    assert "same model changes stance" in text
+    assert "not proof that a model is biased" in text
 
 
 def test_markdown_report_includes_breakdowns_and_caveats():
     markdown = build_markdown_report(_result())
 
-    assert "# Fillblank eval report" in markdown
+    assert "# Multilingual bias drift report" in markdown
     assert "Provider: `mock`" in markdown
     assert "Model: `mock-model`" in markdown
     assert "## Language breakdown" in markdown
@@ -75,7 +75,7 @@ def test_markdown_report_includes_breakdowns_and_caveats():
     assert "## Parallel translation groups" in markdown
     assert "| top10-app-001 | 2 | en, de | 2.5 | 1 |" in markdown
     assert "## How to read this" in markdown
-    assert "not an alignment proof" in markdown
+    assert "not proof that a model is biased" in markdown
 
 
 def test_html_report_escapes_content_and_includes_summary():

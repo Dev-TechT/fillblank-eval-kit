@@ -14,4 +14,4 @@ prompt_template: |
 metric: fillblank_pass_rate
 metadata:
   version: 0.1
-  caveat: "Behavior/alignment-relevant profile only; not an alignment proof. No public model ranking claims."
+  caveat: "Language-drift diagnostic only; not proof that a model is biased, unbiased, aligned, safe, fair, or better than another model."

@@ -42,7 +42,7 @@ CRUDE_RANKING_PATTERNS = (
     "best nationality",
 )
 
-PUBLIC_CAVEAT = "Behavior/alignment-relevant profile only; not an alignment proof. No public model ranking claims."
+PUBLIC_CAVEAT = "Language-drift diagnostic only; not proof that a model is biased, unbiased, aligned, safe, fair, or better than another model."
 
 
 @dataclass(frozen=True)

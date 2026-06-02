@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import re
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -25,6 +27,8 @@ class RunnerConfig:
     timeout_seconds: int = 60
     limit: int | None = None
     include_raw_response: bool = False
+    progress: bool = False
+    progress_jsonl: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -103,7 +107,95 @@ def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
     path.write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + ("\n" if rows else ""), encoding="utf-8")
 
 
+_ARTIFACT_NAMES = {"results.jsonl", "summary.json", "report.md", "report.html"}
+_SECRET_PATTERNS = [
+    re.compile(r"sk-[A-Za-z0-9._-]+"),
+    re.compile(r"(?i)(api[_ -]?key|authorization|bearer|token|secret|password)\s*[:= ]\s*[^\s,;}]+"),
+    re.compile(r"(?i)raw_response\s*[:=]\s*\{[^}]*\}"),
+]
+
+
+def _progress_path_error(config: RunnerConfig) -> str | None:
+    if config.progress_jsonl is None:
+        return None
+    progress_path = config.progress_jsonl.resolve()
+    for artifact_name in _ARTIFACT_NAMES:
+        if progress_path == (config.out_dir / artifact_name).resolve():
+            return f"progress_jsonl must not point at a runner artifact path: {artifact_name}"
+    return None
+
+
+def _safe_error_message(exc: BaseException) -> str:
+    message = str(exc) or type(exc).__name__
+    if re.search(r"(?i)(api[_ -]?key|authorization|bearer|token|secret|password|raw[_ -]?response|raw provider response)", message):
+        return "[redacted]"
+    redacted = message
+    for pattern in _SECRET_PATTERNS:
+        redacted = pattern.sub("[redacted]", redacted)
+    if redacted != message:
+        return redacted
+    return message
+
+
+class ProgressReporter:
+    def __init__(self, config: RunnerConfig, case_count: int) -> None:
+        self.config = config
+        self.case_count = case_count
+        self.events_path = config.progress_jsonl
+        if self.events_path is not None:
+            self.events_path.parent.mkdir(parents=True, exist_ok=True)
+            self.events_path.write_text("", encoding="utf-8")
+
+    def emit(self, event: dict[str, Any]) -> None:
+        clean_event = {key: value for key, value in event.items() if key not in {"api_key", "raw_response"}}
+        if self.events_path is not None:
+            with self.events_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(clean_event, ensure_ascii=False) + "\n")
+        if self.config.progress:
+            self._write_human_progress(clean_event)
+
+    def _write_human_progress(self, event: dict[str, Any]) -> None:
+        event_type = event.get("type")
+        if event_type == "run_started":
+            print(
+                f"fillblank-run started provider={event.get('provider')} model={event.get('model')} cases={event.get('case_count')}",
+                file=sys.stderr,
+            )
+        elif event_type == "case_started":
+            print(
+                "fillblank-run "
+                f"case {event.get('index')}/{event.get('total')} id={event.get('case_id')} "
+                f"completed={event.get('completed_count')} failed={event.get('error_count')} model={event.get('model')}",
+                file=sys.stderr,
+            )
+        elif event_type == "case_completed":
+            print(
+                "fillblank-run "
+                f"case {event.get('index')}/{event.get('total')} id={event.get('case_id')} ok "
+                f"completed={event.get('completed_count')} failed={event.get('error_count')}",
+                file=sys.stderr,
+            )
+        elif event_type == "case_failed":
+            print(
+                "fillblank-run "
+                f"case {event.get('index')}/{event.get('total')} id={event.get('case_id')} failed "
+                f"completed={event.get('completed_count')} failed={event.get('error_count')} "
+                f"error_type={event.get('error_type')}",
+                file=sys.stderr,
+            )
+        elif event_type == "run_completed":
+            print(
+                "fillblank-run completed "
+                f"ok={event.get('ok')} completed={event.get('completed_count')} failed={event.get('error_count')}",
+                file=sys.stderr,
+            )
+
+
 def run_benchmark(config: RunnerConfig) -> RunnerResult:
+    progress_path_error = _progress_path_error(config)
+    if progress_path_error:
+        return RunnerResult(ok=False, errors=[progress_path_error])
+
     cases, errors = _load_public_cases(config.dataset_paths, config.limit)
     if errors:
         return RunnerResult(ok=False, errors=errors)
@@ -121,15 +213,39 @@ def run_benchmark(config: RunnerConfig) -> RunnerResult:
     try:
         client = build_provider_client(provider_config)
     except ProviderError as exc:
-        return RunnerResult(ok=False, errors=[str(exc)])
+        return RunnerResult(ok=False, errors=[_safe_error_message(exc)])
 
     output_rows: list[dict[str, Any]] = []
     case_results: list[dict[str, Any]] = []
     score_results = []
     run_errors: list[str] = []
-    for case in cases:
+    completed_count = 0
+    error_count = 0
+    progress = ProgressReporter(config, len(cases))
+    progress.emit({
+        "type": "run_started",
+        "provider": config.provider,
+        "model": config.model,
+        "dataset_paths": [str(path) for path in config.dataset_paths],
+        "case_count": len(cases),
+        "out_dir": str(config.out_dir),
+    })
+    for index, case in enumerate(cases, start=1):
         case_id = case["id"]
         prompt = render_prompt(case)
+        progress.emit({
+            "type": "case_started",
+            "case_id": case_id,
+            "index": index,
+            "total": len(cases),
+            "provider": config.provider,
+            "model": config.model,
+            "language": case.get("language"),
+            "construct": case.get("construct"),
+            "control_type": case.get("control_type"),
+            "completed_count": completed_count,
+            "error_count": error_count,
+        })
         try:
             completion = client.complete(prompt, case_id=case_id)
             score = score_output(completion.text, control_type=case.get("control_type"))
@@ -159,8 +275,25 @@ def run_benchmark(config: RunnerConfig) -> RunnerResult:
             if row_errors:
                 raise ProviderError(f"internal result row schema error: {'; '.join(row_errors)}")
             output_rows.append(row)
-        except ProviderError as exc:
-            message = f"case {case_id}: {exc}"
+            completed_count += 1
+            progress.emit({
+                "type": "case_completed",
+                "case_id": case_id,
+                "index": index,
+                "total": len(cases),
+                "provider": completion.provider,
+                "model": completion.model,
+                "language": case.get("language"),
+                "construct": case.get("construct"),
+                "control_type": case.get("control_type"),
+                "completed_count": completed_count,
+                "error_count": error_count,
+                "score": score.score,
+            })
+        except Exception as exc:
+            error_count += 1
+            safe_error = _safe_error_message(exc)
+            message = f"case {case_id}: {safe_error}"
             run_errors.append(message)
             error_row = {
                 "case_id": case_id,
@@ -178,9 +311,24 @@ def run_benchmark(config: RunnerConfig) -> RunnerResult:
                 "prompt": prompt,
                 "output_text": "",
                 "raw_response": None,
-                "error": str(exc),
+                "error": safe_error,
             }
             output_rows.append(error_row)
+            progress.emit({
+                "type": "case_failed",
+                "case_id": case_id,
+                "index": index,
+                "total": len(cases),
+                "provider": config.provider,
+                "model": config.model,
+                "language": case.get("language"),
+                "construct": case.get("construct"),
+                "control_type": case.get("control_type"),
+                "completed_count": completed_count,
+                "error_count": error_count,
+                "error_type": type(exc).__name__,
+                "error": safe_error,
+            })
 
     summary = summarize_scores(score_results)
     summary["case_count"] = len(cases)
@@ -193,6 +341,10 @@ def run_benchmark(config: RunnerConfig) -> RunnerResult:
         "model": config.model,
         "dataset_paths": [str(path) for path in config.dataset_paths],
         "summary": summary,
+        "progress_events": {
+            "path": str(progress.events_path) if progress.events_path is not None else None,
+            "event_types": ["run_started", "case_started", "case_completed", "case_failed", "run_completed"],
+        },
         "breakdowns": {
             "by_language": _breakdown(case_results, "language"),
             "by_construct": _breakdown(case_results, "construct"),
@@ -216,4 +368,19 @@ def run_benchmark(config: RunnerConfig) -> RunnerResult:
 
     (config.out_dir / "report.md").write_text(build_markdown_report(result), encoding="utf-8")
     (config.out_dir / "report.html").write_text(build_html_report(result), encoding="utf-8")
+    progress.emit({
+        "type": "run_completed",
+        "ok": not run_errors,
+        "provider": config.provider,
+        "model": config.model,
+        "case_count": len(cases),
+        "completed_count": len(case_results),
+        "error_count": len(run_errors),
+        "artifacts": {
+            "results_jsonl": str(config.out_dir / "results.jsonl"),
+            "summary_json": str(config.out_dir / "summary.json"),
+            "report_md": str(config.out_dir / "report.md"),
+            "report_html": str(config.out_dir / "report.html"),
+        },
+    })
     return RunnerResult(ok=not run_errors, errors=run_errors, out_dir=config.out_dir, summary=result)

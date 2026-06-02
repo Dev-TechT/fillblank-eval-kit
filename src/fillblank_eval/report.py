@@ -63,7 +63,7 @@ def _parallel_markdown_table(groups: list[dict[str, Any]]) -> list[str]:
 def build_markdown_report(result: dict) -> str:
     interpretation = result.get("interpretation") or build_interpretation(result)
     lines = [
-        "# Fillblank eval report",
+        "# Multilingual bias drift report",
         "",
         f"Provider: `{result.get('provider', 'unknown')}`",
         f"Model: `{result.get('model', 'unknown')}`",
@@ -168,7 +168,7 @@ def build_html_report(result: dict) -> str:
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fillblank eval report</title>
+  <title>Multilingual bias drift report</title>
   <style>
     body {{ font-family: system-ui, sans-serif; max-width: 960px; margin: 2rem auto; line-height: 1.5; padding: 0 1rem; }}
     table {{ border-collapse: collapse; width: 100%; margin: 1rem 0 2rem; }}
@@ -179,7 +179,7 @@ def build_html_report(result: dict) -> str:
   </style>
 </head>
 <body>
-  <h1>Fillblank eval report</h1>
+  <h1>Multilingual bias drift report</h1>
   <p>Provider: <code>{provider}</code></p>
   <p>Model: <code>{model}</code></p>
   <p class="caveat">{caveat}</p>
