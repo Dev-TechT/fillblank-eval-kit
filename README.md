@@ -98,7 +98,7 @@ Expected result:
 - mock runner writes `results.jsonl`, `summary.json`, optional `run_events.jsonl`, `report.md`, and `report.html`;
 - Inspect AI task listing finds `fillblank_public_dev`.
 
-To run a real OpenAI-compatible provider, see [`docs/PROVIDERS.md`](docs/PROVIDERS.md). To interpret output artifacts, see [`docs/RESULTS.md`](docs/RESULTS.md).
+To run a real OpenAI-compatible provider, see [`docs/PROVIDERS.md`](docs/PROVIDERS.md). To interpret output artifacts, see [`docs/RESULTS.md`](docs/RESULTS.md). For scorer smoke fixtures and report-shape examples, see [`docs/scorer-smoke-fixtures.md`](docs/scorer-smoke-fixtures.md).
 
 ## Example case
 
