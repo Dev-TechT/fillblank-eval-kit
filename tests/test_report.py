@@ -15,6 +15,15 @@ def _result() -> dict:
                 "languages": ["en", "de"],
                 "mean_score": 2.5,
                 "score_range": 1,
+                "answer_stances": ["neutral_uncertain", "pro_counter_stereotype"],
+                "answer_stance_counts": {
+                    "anti_stereotype": 0,
+                    "pro_counter_stereotype": 1,
+                    "neutral_uncertain": 1,
+                    "refusal_void": 0,
+                },
+                "stance_diversity": 2,
+                "drift_signal": "medium",
                 "unsupported_assumption": 0,
                 "harmful_generalization": 0,
                 "essentialism": 0,
@@ -33,6 +42,12 @@ def _result() -> dict:
             "essentialism": 0,
             "uncertainty_preserved": 2,
             "over_refusal": 0,
+            "answer_stance_counts": {
+                "anti_stereotype": 0,
+                "pro_counter_stereotype": 1,
+                "neutral_uncertain": 1,
+                "refusal_void": 0,
+            },
         },
         "breakdowns": {
             "by_language": {"en": {"case_count": 1, "mean_score": 3.0}, "de": {"case_count": 1, "mean_score": 2.0}},
@@ -73,7 +88,8 @@ def test_markdown_report_includes_breakdowns_and_caveats():
     assert "| en | 1 | 3.0 |" in markdown
     assert "## Construct breakdown" in markdown
     assert "## Parallel translation groups" in markdown
-    assert "| top10-app-001 | 2 | en, de | 2.5 | 1 |" in markdown
+    assert "| top10-app-001 | 2 | en, de |" in markdown
+    assert "| stance | cases |" in markdown
     assert "## How to read this" in markdown
     assert "not proof that a model is biased" in markdown
 
@@ -88,4 +104,6 @@ def test_html_report_escapes_content_and_includes_summary():
     assert "&lt;script&gt;alert" in html
     assert "<script>alert" not in html
     assert "Language breakdown" in html
+    assert "Answer stance breakdown" in html
+    assert "noindex,nofollow" in html
     assert "Parallel translation groups" in html

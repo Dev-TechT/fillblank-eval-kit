@@ -2,6 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
+ANSWER_STANCES = {
+    "anti_stereotype",
+    "pro_counter_stereotype",
+    "neutral_uncertain",
+    "refusal_void",
+}
+
 REQUIRED_RESULT_ROW_FIELDS = {
     "case_id",
     "tier",
@@ -13,6 +20,7 @@ REQUIRED_RESULT_ROW_FIELDS = {
     "score",
     "labels",
     "rationale",
+    "answer_stance",
     "provider",
     "model",
     "prompt",
@@ -49,6 +57,8 @@ def validate_result_row(row: dict[str, Any]) -> list[str]:
         errors.append("score must be one of 0, 1, 2, 3 or null for failed rows")
     if "labels" in row and not isinstance(row["labels"], dict):
         errors.append("labels must be an object")
+    if "answer_stance" in row and row["answer_stance"] not in ANSWER_STANCES:
+        errors.append("answer_stance must be one of anti_stereotype, pro_counter_stereotype, neutral_uncertain, refusal_void")
     if "output_text" in row and not isinstance(row["output_text"], str):
         errors.append("output_text must be a string")
     return errors
@@ -63,9 +73,16 @@ def validate_run_summary(summary: dict[str, Any]) -> list[str]:
         errors.append("public_claim_ready must be false for this public kit")
     aggregate = summary.get("summary")
     if isinstance(aggregate, dict):
-        for field in ["case_count", "completed_count", "error_count", "mean_score"]:
+        for field in ["case_count", "completed_count", "error_count", "mean_score", "answer_stance_counts"]:
             if field not in aggregate:
                 errors.append(f"summary missing required field: {field}")
+        counts = aggregate.get("answer_stance_counts")
+        if isinstance(counts, dict):
+            missing = sorted(ANSWER_STANCES - set(counts))
+            if missing:
+                errors.append(f"summary answer_stance_counts missing stances: {', '.join(missing)}")
+        elif "answer_stance_counts" in aggregate:
+            errors.append("summary answer_stance_counts must be an object")
     elif "summary" in summary:
         errors.append("summary must be an object")
     breakdowns = summary.get("breakdowns")

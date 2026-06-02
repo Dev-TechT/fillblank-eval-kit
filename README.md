@@ -26,6 +26,7 @@ This project gives you:
 - a validator for public sample/dev data;
 - a provider-agnostic runner with mock and OpenAI-compatible modes;
 - a small heuristic scorer for smoke tests;
+- first-class `answer_stance` labels and same-question drift summaries;
 - duplicate and near-duplicate checks for proposed cases;
 - 127 public example cases across English, German, Greek, plus a small 10-language pilot set;
 - a data-tier policy for keeping private holdouts private;

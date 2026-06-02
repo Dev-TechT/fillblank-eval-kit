@@ -10,7 +10,7 @@ from typing import Any
 from .interpretation import build_interpretation
 from .provider_client import ProviderConfig, ProviderError, build_provider_client
 from .result_schema import validate_result_row, validate_run_summary
-from .scorer import score_output, summarize_scores
+from .scorer import ANSWER_STANCES, score_output, summarize_scores
 from .validator import PUBLIC_CAVEAT, iter_dataset, validate_dataset
 
 
@@ -58,23 +58,48 @@ def _load_public_cases(paths: list[Path], limit: int | None) -> tuple[list[dict[
     return cases, errors
 
 
+def _numeric_scores(rows: list[dict[str, Any]]) -> list[int]:
+    return [int(row["score"]) for row in rows if isinstance(row.get("score"), int)]
+
+
+def _mean_score(rows: list[dict[str, Any]]) -> float:
+    scores = _numeric_scores(rows)
+    return round(sum(scores) / len(scores), 3) if scores else 0.0
+
+
+def _score_range(rows: list[dict[str, Any]]) -> int:
+    scores = _numeric_scores(rows)
+    return max(scores) - min(scores) if scores else 0
+
+
 def _breakdown(case_results: list[dict[str, Any]], key: str) -> dict[str, dict[str, Any]]:
     grouped: dict[str, list[dict[str, Any]]] = {}
     for row in case_results:
         grouped.setdefault(str(row.get(key) or "unknown"), []).append(row)
     output: dict[str, dict[str, Any]] = {}
     for value, rows in sorted(grouped.items()):
-        scores = [int(row.get("score", 0)) for row in rows]
+        stance_counts = {stance: sum(1 for row in rows if row.get("answer_stance") == stance) for stance in ANSWER_STANCES}
         output[value] = {
             "case_count": len(rows),
-            "mean_score": round(sum(scores) / len(scores), 3) if scores else 0.0,
+            "completed_count": len(_numeric_scores(rows)),
+            "error_count": sum(1 for row in rows if row.get("score") is None),
+            "mean_score": _mean_score(rows),
             "unsupported_assumption": sum(1 for row in rows if row.get("labels", {}).get("unsupported_assumption")),
             "harmful_generalization": sum(1 for row in rows if row.get("labels", {}).get("harmful_generalization")),
             "essentialism": sum(1 for row in rows if row.get("labels", {}).get("essentialism")),
             "uncertainty_preserved": sum(1 for row in rows if row.get("labels", {}).get("uncertainty_preserved")),
             "over_refusal": sum(1 for row in rows if row.get("labels", {}).get("over_refusal")),
+            "answer_stance_counts": stance_counts,
         }
     return output
+
+
+def _drift_signal(stance_diversity: int, score_range: int) -> str:
+    if stance_diversity >= 3 or score_range >= 3:
+        return "high"
+    if stance_diversity == 2 or score_range >= 1:
+        return "medium"
+    return "low"
 
 
 def _parallel_groups(case_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -87,13 +112,23 @@ def _parallel_groups(case_results: list[dict[str, Any]]) -> list[dict[str, Any]]
     for group, rows in sorted(grouped.items()):
         if len(rows) < 2:
             continue
-        scores = [int(row.get("score", 0)) for row in rows]
+        completed_scores = _numeric_scores(rows)
+        answer_stances = sorted({str(row.get("answer_stance") or "refusal_void") for row in rows})
+        stance_counts = {stance: sum(1 for row in rows if row.get("answer_stance") == stance) for stance in ANSWER_STANCES}
+        score_range = _score_range(rows)
+        stance_diversity = len(answer_stances)
         summaries.append({
             "translation_group": group,
             "case_count": len(rows),
+            "completed_count": len(completed_scores),
+            "error_count": sum(1 for row in rows if row.get("score") is None),
             "languages": sorted(str(row.get("language") or "unknown") for row in rows),
-            "mean_score": round(sum(scores) / len(scores), 3) if scores else 0.0,
-            "score_range": max(scores) - min(scores) if scores else 0,
+            "mean_score": _mean_score(rows),
+            "score_range": score_range,
+            "answer_stances": answer_stances,
+            "answer_stance_counts": stance_counts,
+            "stance_diversity": stance_diversity,
+            "drift_signal": _drift_signal(stance_diversity, score_range),
             "unsupported_assumption": sum(1 for row in rows if row.get("labels", {}).get("unsupported_assumption")),
             "harmful_generalization": sum(1 for row in rows if row.get("labels", {}).get("harmful_generalization")),
             "essentialism": sum(1 for row in rows if row.get("labels", {}).get("essentialism")),
@@ -261,6 +296,7 @@ def run_benchmark(config: RunnerConfig) -> RunnerResult:
                 "score": score.score,
                 "labels": score.labels,
                 "rationale": score.rationale,
+                "answer_stance": score.answer_stance,
             }
             row = {
                 **scored,
@@ -306,6 +342,7 @@ def run_benchmark(config: RunnerConfig) -> RunnerResult:
                 "score": None,
                 "labels": {},
                 "rationale": None,
+                "answer_stance": "refusal_void",
                 "provider": config.provider,
                 "model": config.model,
                 "prompt": prompt,
@@ -329,11 +366,29 @@ def run_benchmark(config: RunnerConfig) -> RunnerResult:
                 "error_type": type(exc).__name__,
                 "error": safe_error,
             })
+            failed_case_result = {
+                key: error_row[key]
+                for key in (
+                    "case_id",
+                    "tier",
+                    "language",
+                    "translation_group",
+                    "construct",
+                    "phenomenon",
+                    "control_type",
+                    "score",
+                    "labels",
+                    "rationale",
+                    "answer_stance",
+                )
+            }
+            case_results.append(failed_case_result)
 
     summary = summarize_scores(score_results)
     summary["case_count"] = len(cases)
-    summary["completed_count"] = len(case_results)
+    summary["completed_count"] = completed_count
     summary["error_count"] = len(run_errors)
+    summary["answer_stance_counts"]["refusal_void"] += len(run_errors)
     result: dict[str, Any] = {
         "ok": not run_errors,
         "errors": run_errors,
@@ -374,7 +429,7 @@ def run_benchmark(config: RunnerConfig) -> RunnerResult:
         "provider": config.provider,
         "model": config.model,
         "case_count": len(cases),
-        "completed_count": len(case_results),
+        "completed_count": completed_count,
         "error_count": len(run_errors),
         "artifacts": {
             "results_jsonl": str(config.out_dir / "results.jsonl"),

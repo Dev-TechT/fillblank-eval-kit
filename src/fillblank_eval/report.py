@@ -19,6 +19,12 @@ SUMMARY_KEYS = [
     "uncertainty_preserved",
     "over_refusal",
 ]
+ANSWER_STANCES = [
+    "anti_stereotype",
+    "pro_counter_stereotype",
+    "neutral_uncertain",
+    "refusal_void",
+]
 
 
 def _markdown_table(title: str, rows: dict[str, dict[str, Any]]) -> list[str]:
@@ -38,23 +44,29 @@ def _markdown_table(title: str, rows: dict[str, dict[str, Any]]) -> list[str]:
     return lines
 
 
+def _stance_counts_markdown(counts: dict[str, Any]) -> list[str]:
+    lines = ["## Answer stance breakdown", "", "| stance | cases |", "| --- | ---: |"]
+    for stance in ANSWER_STANCES:
+        lines.append(f"| {stance} | {counts.get(stance, 0)} |")
+    return lines
+
+
 def _parallel_markdown_table(groups: list[dict[str, Any]]) -> list[str]:
-    lines = ["## Parallel translation groups", "", "| group | cases | languages | mean score | score range | unsupported | harmful | uncertainty | over-refusal |", "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |"]
+    lines = ["## Parallel translation groups", "", "| group | cases | languages | stances | diversity | drift signal | mean score | score range |", "| --- | ---: | --- | --- | ---: | --- | ---: | ---: |"]
     if not groups:
-        lines.append("| none | 0 | - | 0 | 0 | 0 | 0 | 0 | 0 |")
+        lines.append("| none | 0 | - | - | 0 | low | 0 | 0 |")
         return lines
     for group in groups:
         lines.append(
-            "| {group} | {cases} | {languages} | {mean} | {score_range} | {unsupported} | {harmful} | {uncertainty} | {over_refusal} |".format(
+            "| {group} | {cases} | {languages} | {stances} | {diversity} | {drift_signal} | {mean} | {score_range} |".format(
                 group=group.get("translation_group", "unknown"),
                 cases=group.get("case_count", 0),
                 languages=", ".join(group.get("languages") or []),
+                stances=", ".join(group.get("answer_stances") or []),
+                diversity=group.get("stance_diversity", 0),
+                drift_signal=group.get("drift_signal", "unknown"),
                 mean=group.get("mean_score", 0),
                 score_range=group.get("score_range", 0),
-                unsupported=group.get("unsupported_assumption", 0),
-                harmful=group.get("harmful_generalization", 0),
-                uncertainty=group.get("uncertainty_preserved", 0),
-                over_refusal=group.get("over_refusal", 0),
             )
         )
     return lines
@@ -77,6 +89,7 @@ def build_markdown_report(result: dict) -> str:
         lines.append(f"- {key.replace('_', ' ')}: {summary.get(key, 0)}")
     lines.extend(["", "## How to read this", "", interpretation])
 
+    lines.extend([""] + _stance_counts_markdown(summary.get("answer_stance_counts") or {}))
     breakdowns = result.get("breakdowns") or {}
     lines.extend([""] + _markdown_table("Language breakdown", breakdowns.get("by_language") or {}))
     lines.extend([""] + _markdown_table("Construct breakdown", breakdowns.get("by_construct") or {}))
@@ -95,6 +108,7 @@ def build_markdown_report(result: dict) -> str:
             f"Control type: `{case.get('control_type')}`",
             f"Score: `{case.get('score')}`",
             f"Rationale: {case.get('rationale')}",
+            f"Answer stance: `{case.get('answer_stance', 'unknown')}`",
             "",
         ])
     return "\n".join(lines).rstrip() + "\n"
@@ -121,6 +135,18 @@ def _html_table(title: str, rows: dict[str, dict[str, Any]]) -> str:
     )
 
 
+def _stance_counts_html(counts: dict[str, Any]) -> str:
+    rows = "".join(
+        f"<tr><td>{html.escape(stance)}</td><td>{html.escape(str(counts.get(stance, 0)))}</td></tr>"
+        for stance in ANSWER_STANCES
+    )
+    return (
+        "<h2>Answer stance breakdown</h2>"
+        "<table><thead><tr><th>stance</th><th>cases</th></tr></thead>"
+        f"<tbody>{rows}</tbody></table>"
+    )
+
+
 def _parallel_html_table(groups: list[dict[str, Any]]) -> str:
     if groups:
         body = "".join(
@@ -128,21 +154,20 @@ def _parallel_html_table(groups: list[dict[str, Any]]) -> str:
             f"<td>{html.escape(str(group.get('translation_group', 'unknown')))}</td>"
             f"<td>{group.get('case_count', 0)}</td>"
             f"<td>{html.escape(', '.join(group.get('languages') or []))}</td>"
+            f"<td>{html.escape(', '.join(group.get('answer_stances') or []))}</td>"
+            f"<td>{group.get('stance_diversity', 0)}</td>"
+            f"<td>{html.escape(str(group.get('drift_signal', 'unknown')))}</td>"
             f"<td>{group.get('mean_score', 0)}</td>"
             f"<td>{group.get('score_range', 0)}</td>"
-            f"<td>{group.get('unsupported_assumption', 0)}</td>"
-            f"<td>{group.get('harmful_generalization', 0)}</td>"
-            f"<td>{group.get('uncertainty_preserved', 0)}</td>"
-            f"<td>{group.get('over_refusal', 0)}</td>"
             "</tr>"
             for group in groups
         )
     else:
-        body = "<tr><td>none</td><td>0</td><td>-</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>"
+        body = "<tr><td>none</td><td>0</td><td>-</td><td>-</td><td>0</td><td>low</td><td>0</td><td>0</td></tr>"
     return (
         "<h2>Parallel translation groups</h2>"
-        "<table><thead><tr><th>group</th><th>cases</th><th>languages</th><th>mean score</th><th>score range</th>"
-        "<th>unsupported</th><th>harmful</th><th>uncertainty</th><th>over-refusal</th></tr></thead>"
+        "<table><thead><tr><th>group</th><th>cases</th><th>languages</th><th>stances</th><th>diversity</th><th>drift signal</th>"
+        "<th>mean score</th><th>score range</th></tr></thead>"
         f"<tbody>{body}</tbody></table>"
     )
 
@@ -160,6 +185,7 @@ def build_html_report(result: dict) -> str:
         f"<p>Construct: <code>{html.escape(str(case.get('construct')))}</code></p>"
         f"<p>Control type: <code>{html.escape(str(case.get('control_type')))}</code></p>"
         f"<p>Score: <code>{html.escape(str(case.get('score')))}</code></p>"
+        f"<p>Answer stance: <code>{html.escape(str(case.get('answer_stance', 'unknown')))}</code></p>"
         f"<p>Rationale: {html.escape(str(case.get('rationale')))}</p>"
         "</section>"
         for case in cases
@@ -168,6 +194,7 @@ def build_html_report(result: dict) -> str:
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="robots" content="noindex,nofollow">
   <title>Multilingual bias drift report</title>
   <style>
     body {{ font-family: system-ui, sans-serif; max-width: 960px; margin: 2rem auto; line-height: 1.5; padding: 0 1rem; }}
@@ -188,6 +215,7 @@ def build_html_report(result: dict) -> str:
   <ul>{summary_items}</ul>
   <h2>How to read this</h2>
   <p>{interpretation}</p>
+  {stance_table}
   {language_table}
   {construct_table}
   {control_table}
@@ -204,6 +232,7 @@ def build_html_report(result: dict) -> str:
         public_claim_ready=html.escape(str(result.get("public_claim_ready", False)).lower()),
         summary_items=summary_items,
         interpretation=html.escape(str(result.get("interpretation") or build_interpretation(result))),
+        stance_table=_stance_counts_html(summary.get("answer_stance_counts") or {}),
         language_table=_html_table("Language breakdown", breakdowns.get("by_language") or {}),
         construct_table=_html_table("Construct breakdown", breakdowns.get("by_construct") or {}),
         control_table=_html_table("Control-type breakdown", breakdowns.get("by_control_type") or {}),

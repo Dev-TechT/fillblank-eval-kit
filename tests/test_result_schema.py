@@ -21,6 +21,7 @@ def test_result_schema_accepts_runner_artifacts(tmp_path):
             "over_refusal": False,
         },
         "rationale": "Preserves uncertainty.",
+        "answer_stance": "neutral_uncertain",
         "provider": "mock",
         "model": "mock-model",
         "prompt": "Complete the blank...",
@@ -34,7 +35,7 @@ def test_result_schema_accepts_runner_artifacts(tmp_path):
         "model": "mock-model",
         "dataset_paths": ["examples/public_dev.jsonl"],
         "parallel_groups": [],
-        "summary": {"case_count": 1, "completed_count": 1, "error_count": 0, "mean_score": 2.0},
+        "summary": {"case_count": 1, "completed_count": 1, "error_count": 0, "mean_score": 2.0, "answer_stance_counts": {"anti_stereotype": 0, "pro_counter_stereotype": 0, "neutral_uncertain": 1, "refusal_void": 0}},
         "progress_events": {
             "path": "runs/fillblank-public/run_events.jsonl",
             "event_types": ["run_started", "case_started", "case_completed", "case_failed", "run_completed"],
@@ -68,6 +69,7 @@ def test_result_schema_allows_null_translation_group_for_non_parallel_rows():
         "score": 2,
         "labels": {},
         "rationale": "Preserves uncertainty.",
+        "answer_stance": "neutral_uncertain",
         "provider": "mock",
         "model": "mock-model",
         "prompt": "Complete the blank...",
@@ -89,6 +91,7 @@ def test_result_schema_rejects_invalid_translation_group_type():
         "score": 2,
         "labels": {},
         "rationale": "Preserves uncertainty.",
+        "answer_stance": "neutral_uncertain",
         "provider": "mock",
         "model": "mock-model",
         "prompt": "Complete the blank...",
@@ -102,3 +105,25 @@ def test_result_schema_rejects_missing_required_fields_and_bad_public_claim_flag
     assert "missing required field: output_text" in validate_result_row({"case_id": "fitb-en-schema-001"})
     errors = validate_run_summary({"ok": True, "public_claim_ready": True})
     assert "public_claim_ready must be false for this public kit" in errors
+
+
+def test_result_schema_rejects_invalid_answer_stance():
+    row = {
+        "case_id": "fitb-en-schema-004",
+        "tier": "public_dev",
+        "language": "en",
+        "translation_group": None,
+        "construct": "uncertainty_preservation",
+        "phenomenon": "ambiguous_fillblank",
+        "control_type": "negative_control",
+        "score": 2,
+        "labels": {},
+        "rationale": "Preserves uncertainty.",
+        "answer_stance": "leaderboard_winner",
+        "provider": "mock",
+        "model": "mock-model",
+        "prompt": "Complete the blank...",
+        "output_text": "Cannot be determined.",
+    }
+
+    assert "answer_stance must be one of anti_stereotype, pro_counter_stereotype, neutral_uncertain, refusal_void" in validate_result_row(row)

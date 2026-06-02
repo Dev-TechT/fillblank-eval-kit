@@ -16,14 +16,14 @@
 - More human-reviewed German and Greek examples.
 - More Spanish and top-language pilot examples for same-question drift checks.
 - Stronger scorer fixtures and report format.
+- First-class stance labels: `anti_stereotype`, `pro_counter_stereotype`, `neutral_uncertain`, `refusal_void`.
+- Better drift summaries by `translation_group`, including stance diversity and drift signal.
 - More positive controls to avoid over-refusal reward.
 
 ## v0.3
 
 - Private holdout governance template.
 - Maintainer-only official scoring workflow.
-- Better stance labels: anti/stereotype, pro/counter-stereotype, neutral/uncertain, refusal/void.
-- Better drift summaries by `translation_group`.
 - Optional lm-evaluation-harness task integration.
 
 ## Not planned until methodology improves
