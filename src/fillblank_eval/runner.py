@@ -14,6 +14,9 @@ from .scorer import ANSWER_STANCES, score_output, summarize_scores
 from .validator import PUBLIC_CAVEAT, iter_dataset, validate_dataset
 
 
+DEFAULT_PRIVATE_OUTPUT_ROOT = Path("~/.hermes/private/multilingual-bias-drift-benchmark")
+
+
 @dataclass(frozen=True)
 class RunnerConfig:
     dataset_paths: list[Path]
@@ -29,6 +32,8 @@ class RunnerConfig:
     include_raw_response: bool = False
     progress: bool = False
     progress_jsonl: Path | None = None
+    run_scope: str = "public"
+    private_output_root: Path = DEFAULT_PRIVATE_OUTPUT_ROOT
 
 
 @dataclass(frozen=True)
@@ -150,6 +155,82 @@ _SECRET_PATTERNS = [
 ]
 
 
+PRIVATE_TIER_NAMES = {"private_holdout", "quarantine_candidates", "retired_holdout"}
+PRIVATE_PATH_MARKERS = PRIVATE_TIER_NAMES | {"client-runs", "client_run", "client-run", "client"}
+PUBLIC_OUTPUT_SCOPES = {"public", "public-mock", "mock", "dry-run", "dry_run"}
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _is_inside(path: Path, parent: Path) -> bool:
+    path = path.expanduser().resolve(strict=False)
+    parent = parent.expanduser().resolve(strict=False)
+    try:
+        path.relative_to(parent)
+        return True
+    except ValueError:
+        return False
+
+
+def _path_has_private_marker(path: Path) -> bool:
+    parts = {part.lower() for part in path.expanduser().parts}
+    name = path.name.lower()
+    return bool(parts & PRIVATE_PATH_MARKERS) or any(marker in name for marker in PRIVATE_TIER_NAMES)
+
+
+def _dataset_file_has_private_tier(path: Path) -> bool:
+    try:
+        with path.expanduser().open("r", encoding="utf-8") as handle:
+            for _ in range(50):
+                line = handle.readline()
+                if not line:
+                    break
+                if any(tier in line for tier in PRIVATE_TIER_NAMES):
+                    return True
+    except OSError:
+        return False
+    return False
+
+
+def _run_has_private_or_client_material(config: RunnerConfig) -> bool:
+    scope = config.run_scope.strip().lower()
+    if scope not in PUBLIC_OUTPUT_SCOPES:
+        return True
+    if config.provider != "mock":
+        return True
+    if _path_has_private_marker(config.out_dir):
+        return True
+    for dataset_path in config.dataset_paths:
+        if _path_has_private_marker(dataset_path) or _dataset_file_has_private_tier(dataset_path):
+            return True
+    return False
+
+
+def _public_output_path_error(config: RunnerConfig) -> str | None:
+    public_repo = _repo_root()
+    if not _run_has_private_or_client_material(config):
+        return None
+    safe_hint = config.private_output_root / "client-runs" / "<run-id>"
+    if config.private_output_root == DEFAULT_PRIVATE_OUTPUT_ROOT:
+        safe_hint_text = "~/.hermes/private/multilingual-bias-drift-benchmark/client-runs/<run-id>"
+    else:
+        safe_hint_text = str(safe_hint.expanduser())
+    checked_paths = [config.out_dir]
+    if config.progress_jsonl is not None:
+        checked_paths.append(config.progress_jsonl)
+    for path in checked_paths:
+        if _is_inside(path, public_repo):
+            rejected = path.expanduser().resolve(strict=False)
+            return (
+                f"rejected output path inside public repo for private/client or non-mock run: {rejected}. "
+                f"Use {safe_hint_text} for private/client outputs. "
+                "Only mock/public output is allowed under the public repository."
+            )
+    return None
+
+
 def _progress_path_error(config: RunnerConfig) -> str | None:
     if config.progress_jsonl is None:
         return None
@@ -227,6 +308,10 @@ class ProgressReporter:
 
 
 def run_benchmark(config: RunnerConfig) -> RunnerResult:
+    public_output_path_error = _public_output_path_error(config)
+    if public_output_path_error:
+        return RunnerResult(ok=False, errors=[public_output_path_error])
+
     progress_path_error = _progress_path_error(config)
     if progress_path_error:
         return RunnerResult(ok=False, errors=[progress_path_error])

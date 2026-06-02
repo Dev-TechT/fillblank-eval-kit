@@ -36,6 +36,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--progress", action="store_true", help="Print human-readable run progress to stderr")
     parser.add_argument("--progress-jsonl", type=Path, default=None, help="Write machine-readable run progress/events JSONL to this path")
     parser.add_argument("--dry-run", action="store_true", help="Force credential-free mock provider")
+    parser.add_argument(
+        "--run-scope",
+        choices=["public", "private-client"],
+        default="public",
+        help="Output-safety scope. Use private-client for private/client/holdout runs; these may not write under the public repo.",
+    )
     args = parser.parse_args(argv)
 
     provider = "mock" if args.dry_run else args.provider
@@ -54,6 +60,7 @@ def main(argv: list[str] | None = None) -> int:
         include_raw_response=args.include_raw_response,
         progress=args.progress,
         progress_jsonl=args.progress_jsonl,
+        run_scope=args.run_scope,
     )
     try:
         result = run_benchmark(config)

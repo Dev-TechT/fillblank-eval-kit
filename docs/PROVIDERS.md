@@ -35,9 +35,35 @@ The top-10-language file is a small translation-assisted smoke sample. Its rows 
 
 The validator schema also recognizes private/off-repo tier names (`private_holdout`, `quarantine_candidates`, `retired_holdout`) so maintainers can validate local private files with `--allow-private`. Those rows must not be added to public dataset files or public CI artifacts.
 
+## Private/client output path guard
+
+`fillblank-run` has a fail-closed output guard for private/client or real-provider runs.
+
+Allowed under the public repository:
+
+- credential-free public/mock smokes such as `uv run fillblank-run --dry-run --limit 5 --out-dir runs/mock-smoke`.
+
+Rejected under the public repository:
+
+- `--run-scope private-client` outputs;
+- non-mock provider outputs;
+- output paths that look like client/private-holdout paths;
+- dataset paths or rows that indicate private tiers.
+
+For private/client work, write outputs outside the public checkout, for example:
+
+```bash
+uv run fillblank-run \
+  --run-scope private-client \
+  --dataset ~/.hermes/private/multilingual-bias-drift-benchmark/private_holdout.jsonl \
+  --out-dir ~/.hermes/private/multilingual-bias-drift-benchmark/client-runs/<run-id>/run-output
+```
+
+If a private/client or real-provider run tries to write under this public repo, the runner names the rejected path and points to `~/.hermes/private/multilingual-bias-drift-benchmark/client-runs/<run-id>` as the safe alternative.
+
 ## OpenAI-compatible provider
 
-Set environment variables, then run the public split:
+Set environment variables, then run the public split. Real provider outputs can include sensitive model output and metadata, so write them outside the public checkout:
 
 ```bash
 export FILLBLANK_PROVIDER=openai-compatible
@@ -45,7 +71,7 @@ export FILLBLANK_BASE_URL=https://api.openai.com/v1
 export FILLBLANK_API_KEY=sk-...
 export FILLBLANK_MODEL=gpt-4o-mini
 
-uv run fillblank-run --out-dir runs/openai-compatible-public
+uv run fillblank-run --out-dir ~/.hermes/private/multilingual-bias-drift-benchmark/provider-runs/openai-compatible-public
 ```
 
 Equivalent generic OpenAI-style names are also read when the `FILLBLANK_*` variables are absent:
@@ -54,7 +80,7 @@ Equivalent generic OpenAI-style names are also read when the `FILLBLANK_*` varia
 export OPENAI_BASE_URL=https://api.openai.com/v1
 export OPENAI_API_KEY=sk-...
 export OPENAI_MODEL=gpt-4o-mini
-uv run fillblank-run --provider openai-compatible --out-dir runs/provider-public
+uv run fillblank-run --provider openai-compatible --out-dir ~/.hermes/private/multilingual-bias-drift-benchmark/provider-runs/provider-public
 ```
 
 Useful options:
@@ -66,7 +92,7 @@ uv run fillblank-run \
   --model "$FILLBLANK_MODEL" \
   --limit 10 \
   --timeout-seconds 90 \
-  --out-dir runs/smoke-real-provider
+  --out-dir ~/.hermes/private/multilingual-bias-drift-benchmark/provider-runs/smoke-real-provider
 ```
 
 ## Secrets and raw responses
