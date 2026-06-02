@@ -1,5 +1,5 @@
 [project]
-name = "fillblank-eval-kit"
+name = "multilingual-bias-drift-benchmark"
 version = "0.1.0"
 description = "A small open-source benchmark for checking language-driven answer drift across equivalent multilingual prompts."
 readme = "README.md"

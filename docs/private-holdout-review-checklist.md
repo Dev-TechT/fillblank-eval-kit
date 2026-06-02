@@ -68,9 +68,9 @@ Allowed decisions:
 Keep private files outside the public repo, for example:
 
 ```text
-~/.hermes/private/fillblank-eval-kit/private_holdout.jsonl
-~/.hermes/private/fillblank-eval-kit/quarantine_candidates.jsonl
-~/.hermes/private/fillblank-eval-kit/retired_holdout.jsonl
+~/.hermes/private/multilingual-bias-drift-benchmark/private_holdout.jsonl
+~/.hermes/private/multilingual-bias-drift-benchmark/quarantine_candidates.jsonl
+~/.hermes/private/multilingual-bias-drift-benchmark/retired_holdout.jsonl
 ```
 
 The public repo may document the process, but not the private rows.

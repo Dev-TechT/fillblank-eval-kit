@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://dev-techt.github.io/fillblank-eval-kit/schema/fillblank.schema.json",
+  "$id": "https://dev-techt.github.io/multilingual-bias-drift-benchmark/schema/fillblank.schema.json",
   "title": "Multilingual Bias Drift Benchmark Case",
   "type": "object",
   "additionalProperties": false,
