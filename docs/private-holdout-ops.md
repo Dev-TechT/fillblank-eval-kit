@@ -32,10 +32,12 @@ Every private case needs:
 - construct clarity;
 - language quality review;
 - provenance/license note;
-- duplicate/near-duplicate check;
+- duplicate/near-duplicate check with `fillblank_eval.duplicates`;
 - safety review;
 - positive/negative control balance.
 
 ## Rotation
 
 Retire or transform cases that leak, become overfit, or receive methodology objections.
+
+See also: `docs/private-holdout-review-checklist.md` for the detailed promotion checklist.

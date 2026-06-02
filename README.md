@@ -13,9 +13,10 @@ This kit gives you:
 - a JSONL case schema;
 - a validator for public sample/dev data;
 - a small heuristic scorer for smoke tests;
-- 102 public example cases across English, German, and Greek;
+- duplicate and near-duplicate checks for proposed cases;
+- 117 public example cases across English, German, and Greek;
 - a data-tier policy for keeping private holdouts private;
-- adapter stubs for Inspect AI, EleutherAI lm-evaluation-harness, and promptfoo.
+- runnable adapter starter for Inspect AI plus stubs for EleutherAI lm-evaluation-harness and promptfoo.
 
 ## What this is good for
 
@@ -53,14 +54,18 @@ From the repo root:
 ```bash
 uv run --with pytest python -m pytest -q
 uv run python -m fillblank_eval.validator examples/public_sample.jsonl examples/public_dev.jsonl
+uv run python -m fillblank_eval.duplicates examples/public_sample.jsonl examples/public_dev.jsonl
 uv run python -m fillblank_eval.leak_scan .
+uv run --with inspect-ai inspect list tasks adapters/inspect/fillblank_task.py
 ```
 
 Expected result:
 
 - tests pass;
 - public datasets validate;
-- leak scan reports no private benchmark data markers outside policy docs.
+- duplicate check has zero blocking errors; warnings are review signals;
+- leak scan reports no private benchmark data markers outside policy docs;
+- Inspect AI task listing finds `fillblank_public_dev`.
 
 ## Example case
 

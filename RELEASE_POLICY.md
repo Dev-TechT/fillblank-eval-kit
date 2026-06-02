@@ -7,6 +7,7 @@ Run:
 ```bash
 uv run --with pytest python -m pytest -q
 uv run python -m fillblank_eval.validator examples/public_sample.jsonl examples/public_dev.jsonl
+uv run python -m fillblank_eval.duplicates examples/public_sample.jsonl examples/public_dev.jsonl
 uv run python -m fillblank_eval.leak_scan .
 ```
 

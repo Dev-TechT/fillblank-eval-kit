@@ -11,9 +11,9 @@
 ## v0.2
 
 - Inspect AI runner with documented command.
-- Stronger scorer fixtures and report format.
-- More human-reviewed German and Greek examples.
 - Near-duplicate detector for contributed cases.
+- More human-reviewed German and Greek examples.
+- Stronger scorer fixtures and report format.
 - More positive controls to avoid over-refusal reward.
 
 ## v0.3

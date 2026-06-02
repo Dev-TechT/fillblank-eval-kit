@@ -16,5 +16,9 @@ jobs:
         run: uv run --with pytest python -m pytest -q
       - name: Validate public datasets
         run: uv run python -m fillblank_eval.validator examples/public_sample.jsonl examples/public_dev.jsonl
+      - name: Duplicate and near-duplicate check
+        run: uv run python -m fillblank_eval.duplicates examples/public_sample.jsonl examples/public_dev.jsonl
       - name: Private-data leak scan
         run: uv run python -m fillblank_eval.leak_scan .
+      - name: Inspect adapter import/list smoke
+        run: uv run --with inspect-ai inspect list tasks adapters/inspect/fillblank_task.py

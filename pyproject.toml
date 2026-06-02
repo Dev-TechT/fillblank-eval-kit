@@ -25,6 +25,7 @@ inspect = ["inspect-ai>=0.3"]
 [project.scripts]
 fillblank-validate = "fillblank_eval.validator:main"
 fillblank-score = "fillblank_eval.scorer:main"
+fillblank-duplicates = "fillblank_eval.duplicates:main"
 fillblank-leak-scan = "fillblank_eval.leak_scan:main"
 
 [build-system]

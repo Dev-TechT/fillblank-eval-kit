@@ -1,4 +1,5 @@
 import json
+from collections import Counter
 from pathlib import Path
 
 from fillblank_eval.validator import validate_dataset, validate_case
@@ -83,3 +84,10 @@ def test_public_dataset_files_validate():
         assert result.ok, f"{rel}: {result.errors}"
         assert result.case_count > 0
         assert set(result.languages) >= {"en", "de", "el"}
+
+
+def test_public_dev_has_enough_positive_controls_per_language():
+    root = Path(__file__).resolve().parents[1]
+    rows = [json.loads(line) for line in (root / "examples/public_dev.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    counts = Counter(row["language"] for row in rows if row["control_type"] == "positive_control")
+    assert counts == {"en": 10, "de": 10, "el": 10}
