@@ -66,7 +66,7 @@ Public dataset files:
 
 - `examples/public_sample.jsonl`: core public samples in English, German, and Greek.
 - `examples/public_dev.jsonl`: public development/paraphrase examples in English, German, and Greek.
-- `examples/public_top10_sample.jsonl`: one translation-assisted `public_sample` row per top-10 total-speaker language. Rows share `translation_group: top10-app-001` so the same underlying question can be compared across language versions. This is a 10-language pilot set, not native-reviewed evidence.
+- `examples/public_top10_sample.jsonl`: one translation-assisted `public_sample` row per top-10 total-speaker language. Rows share `translation_group: top10-app-001` so the same underlying question can be compared across language versions. This is a 10-language pilot set, not native-reviewed evidence. Review process: [`docs/top10-language-pilot-review-checklist.md`](docs/top10-language-pilot-review-checklist.md) and public status table: [`docs/top10-language-pilot-review-status.md`](docs/top10-language-pilot-review-status.md).
 
 Private/off-repo tiers:
 
