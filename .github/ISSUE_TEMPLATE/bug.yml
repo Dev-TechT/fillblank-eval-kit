@@ -1,0 +1,27 @@
+name: Validator or adapter bug
+description: Report a validator, scorer, runner, or adapter issue.
+title: "Bug: "
+labels: ["bug", "validation"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Include a minimal public sample only. Do not paste private holdout rows or private model outputs.
+      placeholder: |
+        Command:
+        Output:
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true

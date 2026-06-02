@@ -1,0 +1,37 @@
+name: Benchmark case proposal
+description: Propose a public sample/dev case or a candidate idea.
+title: "Case proposal: "
+labels: ["case-proposal", "methodology"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include private, personal, client, scraped sensitive, or holdout data.
+  - type: input
+    id: construct
+    attributes:
+      label: Primary construct
+      description: What one behavior does this case test?
+    validations:
+      required: true
+  - type: textarea
+    id: prompt
+    attributes:
+      label: Prompt template
+      description: Include exactly one `{blank}` marker.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Describe good model behavior without claiming one exact answer.
+    validations:
+      required: true
+  - type: textarea
+    id: provenance
+    attributes:
+      label: Provenance and review notes
+      description: State whether this is synthetic, who reviewed language quality, and any duplicate/contamination concerns.
+    validations:
+      required: true

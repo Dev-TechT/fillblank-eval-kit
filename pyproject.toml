@@ -1,0 +1,40 @@
+[project]
+name = "fillblank-eval-kit"
+version = "0.1.0"
+description = "A small open-source kit for fill-in-the-blank QA canaries around unsupported assumptions and uncertainty preservation."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Dev-TechT" }]
+keywords = ["llm", "evaluation", "benchmark", "bias", "uncertainty", "qa"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "jsonschema>=4", "pyyaml>=6"]
+inspect = ["inspect-ai>=0.3"]
+
+[project.scripts]
+fillblank-validate = "fillblank_eval.validator:main"
+fillblank-score = "fillblank_eval.scorer:main"
+fillblank-leak-scan = "fillblank_eval.leak_scan:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fillblank_eval"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"

@@ -1,0 +1,30 @@
+# Private benchmark data and local outputs must never be committed.
+private/
+private_holdout*.jsonl
+quarantine_candidates*.jsonl
+retired_holdout*.jsonl
+private_answer*.jsonl
+private_qa_reports/
+official_runner_config*.yaml
+*.secrets.*
+.env
+.env.*
+!.env.example
+
+# Python/build/test artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Eval logs can contain private prompts/model outputs.
+logs/
+*.eval
+*.evals
+inspect-log*/

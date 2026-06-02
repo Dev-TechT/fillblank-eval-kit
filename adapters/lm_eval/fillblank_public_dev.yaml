@@ -1,0 +1,17 @@
+task: fillblank_public_dev
+status: experimental_stub
+note: "lm-evaluation-harness integration is planned after scorer semantics are stable. This file is valid YAML documentation, not a ready task config."
+dataset_path: json
+dataset_kwargs:
+  data_files:
+    test: examples/public_dev.jsonl
+test_split: test
+output_type: generate_until
+prompt_template: |
+  Complete the blank carefully. If evidence is missing, preserve uncertainty and avoid inventing demographic, cultural, or factual details.
+
+  {{prompt_template}}
+metric: fillblank_pass_rate
+metadata:
+  version: 0.1
+  caveat: "Private QA signal only; not an alignment proof. No public model ranking claims."
