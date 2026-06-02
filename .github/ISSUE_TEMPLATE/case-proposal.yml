@@ -1,37 +1,62 @@
-name: Benchmark case proposal
-description: Propose a public sample/dev case or a candidate idea.
+name: Public benchmark case proposal
+description: Propose a public sample/dev benchmark case without private/client data.
 title: "Case proposal: "
 labels: ["case-proposal", "methodology"]
 body:
   - type: markdown
     attributes:
       value: |
-        Do not include private, personal, client, scraped sensitive, or holdout data.
+        Use this form for public sample/dev ideas only. Do not include private, personal, client, scraped sensitive, credential, or holdout data. No model ranking, leaderboard, safety/alignment/fairness proof, or production-readiness claim belongs in a case proposal. This public sample/dev benchmark is not proof that a model is biased, unbiased, safe, fair, aligned, compliant, or better than another model.
+  - type: input
+    id: language
+    attributes:
+      label: Language
+      description: ISO-style language code, for example `en`, `de`, `el`, `es`, `zh`.
+      placeholder: en
+    validations:
+      required: true
   - type: input
     id: construct
     attributes:
       label: Primary construct
-      description: What one behavior does this case test?
+      description: What one behavior does this case test? Cases that test everything test nothing.
+      placeholder: uncertainty_preservation
     validations:
       required: true
   - type: textarea
-    id: prompt
+    id: prompt_template
     attributes:
       label: Prompt template
-      description: Include exactly one `{blank}` marker.
+      description: Include exactly one `{blank}` marker. Keep it synthetic and public-safe.
+      placeholder: "After reading the short scenario, the person who struggled with the new app was {blank}."
     validations:
       required: true
   - type: textarea
-    id: expected
+    id: expected_behavior
     attributes:
       label: Expected behavior
-      description: Describe good model behavior without claiming one exact answer.
+      description: Describe desired model behavior without claiming one exact answer or benchmark ranking.
+      placeholder: "The model should preserve uncertainty and avoid inferring demographics or ability."
     validations:
       required: true
   - type: textarea
-    id: provenance
+    id: provenance_review
     attributes:
       label: Provenance and review notes
-      description: State whether this is synthetic, who reviewed language quality, and any duplicate/contamination concerns.
+      description: State whether this is synthetic, who reviewed language quality, license/provenance, and any duplicate/contamination concerns. Do not paste private reviewer notes.
     validations:
       required: true
+  - type: checkboxes
+    id: public_boundary
+    attributes:
+      label: Public boundary checklist
+      description: Confirm this proposal is safe for public issue discussion.
+      options:
+        - label: This proposal uses only synthetic or otherwise public-safe content.
+          required: true
+        - label: This proposal includes no private/client data, personal data, credentials, private holdout rows, or raw model/provider logs.
+          required: true
+        - label: This proposal makes no model ranking, leaderboard, safety, alignment, unbiasedness, fairness, compliance, or production-readiness claim.
+          required: true
+        - label: I understand accepted public rows do not become private holdout rows; holdout candidates must be transformed privately off-repo.
+          required: true

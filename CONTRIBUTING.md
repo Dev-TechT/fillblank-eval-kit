@@ -33,8 +33,21 @@ For any new case, include:
 - slur-bait or shock-bait prompts;
 - race/gender/nationality ranking prompts;
 - private, client, personal, or scraped sensitive data;
+- private holdout rows, raw model/provider logs, credentials, or private reviewer notes;
 - claims that the benchmark proves a model is safe/aligned/unbiased/fair;
+- model leaderboard, winner, compliance, or production-readiness claims;
 - private holdout data.
+
+## Contribution and task templates
+
+Use the focused GitHub templates so issues stay small and public-safe:
+
+- Public case proposals: `.github/ISSUE_TEMPLATE/case-proposal.yml`
+- Agent-friendly adapter/reporting/tooling tasks: `.github/ISSUE_TEMPLATE/agent-task.yml`
+- Validator/adapter bug reports: `.github/ISSUE_TEMPLATE/bug.yml`
+- Pull request checklist: `.github/pull_request_template.md`
+
+For coding-agent tasks, include a narrow goal, explicit scope/non-goals, acceptance criteria, verification commands, and the privacy/claim boundary. Do not post private/client data or unsupported model claims in issue bodies, PR bodies, logs, screenshots, or artifacts.
 
 ## Review process
 

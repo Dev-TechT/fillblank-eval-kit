@@ -1,0 +1,71 @@
+name: Agent-friendly implementation task
+description: Scope an adapter, report, validation, docs, or tooling task for contributors/coding agents.
+title: "Task: "
+labels: ["agent-friendly", "implementation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for focused implementation work: adapters, reports, validation, docs, tests, or small tooling changes. Do not include private/client data, credentials, real provider logs, private holdout rows, or unsupported model claims.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be true when this task is done?
+      placeholder: "Add a report fixture proving failed provider rows remain visible."
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: List the expected files/areas and the explicit non-goals. Keep the task small enough for one PR.
+      placeholder: |
+        In scope:
+        - tests around report rendering
+        - docs example
+
+        Non-goals:
+        - no model ranking
+        - no private holdout data
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance criteria
+      description: Bullet the observable behavior, including any adapter/report output shape.
+      placeholder: |
+        - Existing public dry-run still works.
+        - New report section is covered by tests.
+        - Docs keep the public/private and claim boundary.
+    validations:
+      required: true
+  - type: textarea
+    id: verification_commands
+    attributes:
+      label: Verification commands
+      description: Paste the commands a contributor or agent should run and report back.
+      value: |
+        ```bash
+        uv run --with pytest python -m pytest -q
+        uv run python -m fillblank_eval.validator examples/public_sample.jsonl examples/public_dev.jsonl examples/public_top10_sample.jsonl
+        uv run python -m fillblank_eval.duplicates examples/public_sample.jsonl examples/public_dev.jsonl examples/public_top10_sample.jsonl
+        uv run python -m fillblank_eval.leak_scan .
+        ```
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy_claim_boundary
+    attributes:
+      label: Privacy and claim boundary
+      description: Required for adapter/reporting/task issues.
+      options:
+        - label: This task can be completed with public sample/dev data only.
+          required: true
+        - label: No private/client data, credentials, raw provider logs, private holdout rows, or private reviewer notes should be posted.
+          required: true
+        - label: The task must not add unsupported model claims, model rankings, leaderboard language, or safety/alignment/fairness proof claims.
+          required: true
+        - label: Any real-provider run, client packet, or private holdout work remains off-repo and approval-gated.
+          required: true
