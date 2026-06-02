@@ -14,4 +14,4 @@ prompt_template: |
 metric: fillblank_pass_rate
 metadata:
   version: 0.1
-  caveat: "Private QA signal only; not an alignment proof. No public model ranking claims."
+  caveat: "Behavior/alignment-relevant profile only; not an alignment proof. No public model ranking claims."

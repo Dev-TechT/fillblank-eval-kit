@@ -12,6 +12,7 @@ This kit gives you:
 
 - a JSONL case schema;
 - a validator for public sample/dev data;
+- a provider-agnostic public runner with mock and OpenAI-compatible modes;
 - a small heuristic scorer for smoke tests;
 - duplicate and near-duplicate checks for proposed cases;
 - 117 public example cases across English, German, and Greek;
@@ -56,6 +57,7 @@ uv run --with pytest python -m pytest -q
 uv run python -m fillblank_eval.validator examples/public_sample.jsonl examples/public_dev.jsonl
 uv run python -m fillblank_eval.duplicates examples/public_sample.jsonl examples/public_dev.jsonl
 uv run python -m fillblank_eval.leak_scan .
+uv run fillblank-run --dry-run --limit 5 --out-dir runs/mock-smoke
 uv run --with inspect-ai inspect list tasks adapters/inspect/fillblank_task.py
 ```
 
@@ -65,7 +67,10 @@ Expected result:
 - public datasets validate;
 - duplicate check has zero blocking errors; warnings are review signals;
 - leak scan reports no private benchmark data markers outside policy docs;
+- mock runner writes `results.jsonl`, `summary.json`, `report.md`, and `report.html`;
 - Inspect AI task listing finds `fillblank_public_dev`.
+
+To run a real OpenAI-compatible provider, see [`docs/PROVIDERS.md`](docs/PROVIDERS.md). To interpret output artifacts, see [`docs/RESULTS.md`](docs/RESULTS.md).
 
 ## Example case
 

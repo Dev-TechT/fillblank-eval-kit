@@ -27,6 +27,7 @@ fillblank-validate = "fillblank_eval.validator:main"
 fillblank-score = "fillblank_eval.scorer:main"
 fillblank-duplicates = "fillblank_eval.duplicates:main"
 fillblank-leak-scan = "fillblank_eval.leak_scan:main"
+fillblank-run = "fillblank_eval.run_cli:main"
 
 [build-system]
 requires = ["hatchling"]

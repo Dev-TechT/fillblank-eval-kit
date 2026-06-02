@@ -1,6 +1,6 @@
 """Public fillblank eval kit.
 
-Private QA signal only; not an alignment proof. No public model ranking claims.
+Behavior/alignment-relevant profile only; not an alignment proof. No public model ranking claims.
 """
 
 __all__ = ["__version__"]

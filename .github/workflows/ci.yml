@@ -20,5 +20,7 @@ jobs:
         run: uv run python -m fillblank_eval.duplicates examples/public_sample.jsonl examples/public_dev.jsonl
       - name: Private-data leak scan
         run: uv run python -m fillblank_eval.leak_scan .
+      - name: Public runner mock smoke
+        run: uv run fillblank-run --dry-run --limit 3 --out-dir /tmp/fillblank-runner-ci-smoke
       - name: Inspect adapter import/list smoke
         run: uv run --with inspect-ai inspect list tasks adapters/inspect/fillblank_task.py

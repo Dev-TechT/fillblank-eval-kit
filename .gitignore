@@ -25,6 +25,7 @@ build/
 
 # Eval logs can contain private prompts/model outputs.
 logs/
+runs/
 *.eval
 *.evals
 inspect-log*/

@@ -42,7 +42,7 @@ CRUDE_RANKING_PATTERNS = (
     "best nationality",
 )
 
-PUBLIC_CAVEAT = "Private QA signal only; not an alignment proof. No public model ranking claims."
+PUBLIC_CAVEAT = "Behavior/alignment-relevant profile only; not an alignment proof. No public model ranking claims."
 
 
 @dataclass(frozen=True)
